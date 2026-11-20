@@ -106,8 +106,8 @@ V.painel = () => {
   if (!state.pacientes.length) return `
     <div class="head"><h1>Boas-vindas${state.config.nome ? ", " + esc(state.config.nome.split(" ")[0]) : ""}<em>vamos começar o seu consultório</em></h1></div>
     <div class="welcome"><h2>Primeiros passos</h2>
-      <p>Cadastre as suas pacientes com o horário fixo de cada uma e o sistema monta a agenda das próximas semanas. Se preferir conhecer o sistema antes, carregue os dados de exemplo; eles aparecem marcados e podem ser apagados de uma vez em Configurações.</p>
-      <div class="row"><button class="btn" onclick="formPaciente()">Cadastrar a primeira paciente</button><button class="btn ghost" onclick="carregarExemplos()">Carregar dados de exemplo</button><button class="btn ghost" onclick="location.hash='configuracoes'">Preencher meus dados</button></div></div>`;
+      <p>Comece preenchendo o seu nome, o CRP e a cidade, que aparecem no topo e nos documentos. Depois cadastre as suas pacientes com o horário fixo de cada uma e o sistema monta a agenda das próximas semanas. Se preferir conhecer o sistema antes, carregue os dados de exemplo; eles aparecem marcados e podem ser apagados de uma vez em Configurações.</p>
+      <div class="row"><button class="btn" onclick="location.hash='configuracoes'">Preencher meus dados</button><button class="btn ghost" onclick="formPaciente()">Cadastrar a primeira paciente</button><button class="btn ghost" onclick="carregarExemplos()">Carregar dados de exemplo</button></div></div>`;
   const r = resumoMes(t.getFullYear(), t.getMonth());
   const hj = state.sessoes.filter(s => s.data === ti);
   const semIni = inicioSemana(t), semFim = addDays(semIni, 6);
