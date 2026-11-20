@@ -12,8 +12,8 @@ O sistema usa 3 serviços. O GitHub guarda os arquivos, o Netlify publica o ende
 
 1. No menu da esquerda, abra "Criação" e depois "Authentication". Clique em "Vamos começar".
 2. Na aba "Método de login", escolha "E-mail/senha", ative a primeira chave e salve.
-3. Na aba "Usuários", clique em "Adicionar usuário" e cadastre o e-mail da psicóloga com uma senha provisória.
-4. Ela pode trocar a senha depois em Configurações, no botão "Receber e-mail para trocar a senha".
+3. O cadastro é aberto: a psicóloga cria a própria conta na tela de entrada, no botão "Criar conta". Confira em Authentication, aba "Configurações", "Ações do usuário", se a opção "Ativar criação (inscrição)" está marcada.
+4. Para bloquear o acesso de alguém, abra a aba "Usuários", clique nos 3 pontos ao lado do e-mail e escolha "Desativar conta".
 
 ## 3. Criar o banco de dados
 

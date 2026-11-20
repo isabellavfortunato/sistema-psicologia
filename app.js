@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -36,7 +36,7 @@ const state = {
   pacientes: [], sessoes: [], documentos: [], supervisoes: [], formacoes: [],
   mes: { y: hoje().getFullYear(), m: hoje().getMonth() },
   semana: inicioSemana(hoje()),
-  filtro: "atendimento", busca: "", paciente: null
+  filtro: "atendimento", busca: "", paciente: null, modoLogin: "entrar", nomeCadastro: ""
 };
 let desligar = [];
 
@@ -354,7 +354,20 @@ V.configuracoes = () => {
   </div>`;
 };
 
-V.login = () => `
+V.login = () => state.modoLogin === "criar" ? `
+  <div class="login-wrap"><div class="card">
+    <h1>Criar conta<em>escolha o e-mail e a senha que vai usar</em></h1>
+    <form class="stack" style="margin-top:16px" onsubmit="event.preventDefault();criarConta()">
+      <div><label for="cc-n">Nome profissional</label><input id="cc-n" autocomplete="name" required></div>
+      <div><label for="cc-e">E-mail</label><input id="cc-e" type="email" autocomplete="username" required></div>
+      <div><label for="cc-s">Senha, com pelo menos 8 caracteres</label><input id="cc-s" type="password" autocomplete="new-password" minlength="8" required></div>
+      <div><label for="cc-s2">Repita a senha</label><input id="cc-s2" type="password" autocomplete="new-password" minlength="8" required></div>
+      <div class="err" id="cc-err"></div>
+      <button class="btn" type="submit" id="cc-b">Criar conta</button>
+      <button class="link" type="button" onclick="modoLogin('entrar')">Já tenho conta</button>
+    </form>
+    <p class="note">Os dados que você cadastrar ficam visíveis só para a sua conta.</p>
+  </div></div>` : `
   <div class="login-wrap"><div class="card">
     <h1>Consultório<em>entre com o seu e-mail e senha</em></h1>
     <form class="stack" style="margin-top:16px" onsubmit="event.preventDefault();entrar()">
@@ -362,9 +375,8 @@ V.login = () => `
       <div><label for="lg-s">Senha</label><input id="lg-s" type="password" autocomplete="current-password" required></div>
       <div class="err" id="lg-err"></div>
       <button class="btn" type="submit" id="lg-b">Entrar</button>
-      <button class="link" type="button" onclick="esqueci()">Esqueci a senha</button>
+      <div class="row" style="justify-content:space-between"><button class="link" type="button" onclick="esqueci()">Esqueci a senha</button><button class="link" type="button" onclick="modoLogin('criar')">Criar conta</button></div>
     </form>
-    <p class="note">Versão de teste. O acesso é criado pela administradora do sistema.</p>
   </div></div>`;
 
 /* ================= render ================= */
@@ -397,7 +409,9 @@ onAuthStateChanged(auth, user => {
       state[c] = snap.docs.map(d => ({ id: d.id, ...d.data() })); ordenar(); state.carregado.add(c); render();
     }, e => { console.error(e); toast("Não foi possível ler os dados. Confira a conexão."); })));
     desligar.push(onSnapshot(doc(db, "users", user.uid, "config", "geral"), d => {
-      state.config = { ...CONFIG_PADRAO, ...(d.data() || {}) }; state.carregado.add("config"); render();
+      state.config = { ...CONFIG_PADRAO, ...(d.data() || {}) }; state.carregado.add("config");
+      if (!d.exists() && state.nomeCadastro) { gravarConfig({ nome: state.nomeCadastro, email: user.email, criadoEm: serverTimestamp() }); state.nomeCadastro = ""; }
+      render();
     }));
   }
   render();
@@ -406,6 +420,19 @@ async function entrar() {
   $("lg-b").disabled = true; $("lg-err").textContent = "";
   try { await signInWithEmailAndPassword(auth, val("lg-e"), $("lg-s").value); }
   catch (e) { $("lg-err").textContent = ["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found", "auth/invalid-email"].includes(e.code) ? "E-mail ou senha incorretos." : e.code === "auth/too-many-requests" ? "Muitas tentativas. Espere alguns minutos e tente de novo." : "Não foi possível entrar. Confira a conexão."; $("lg-b").disabled = false; }
+}
+function modoLogin(m) { state.modoLogin = m; render(); }
+async function criarConta() {
+  const err = $("cc-err"); err.textContent = "";
+  if ($("cc-s").value !== $("cc-s2").value) { err.textContent = "As 2 senhas não são iguais."; return; }
+  $("cc-b").disabled = true;
+  state.nomeCadastro = val("cc-n");
+  try { await createUserWithEmailAndPassword(auth, val("cc-e"), $("cc-s").value); }
+  catch (e) {
+    state.nomeCadastro = "";
+    err.textContent = ({ "auth/email-already-in-use": "Já existe uma conta com este e-mail. Use Já tenho conta para entrar.", "auth/invalid-email": "Este e-mail não é válido.", "auth/weak-password": "A senha precisa ter pelo menos 8 caracteres.", "auth/password-does-not-meet-requirements": "A senha precisa ter pelo menos 8 caracteres.", "auth/operation-not-allowed": "O cadastro está desativado no momento." })[e.code] || "Não foi possível criar a conta. Confira a conexão.";
+    $("cc-b").disabled = false;
+  }
 }
 async function esqueci() {
   const e = val("lg-e"); if (!e) { $("lg-err").textContent = "Escreva o seu e-mail no campo acima e clique de novo."; return; }
@@ -679,6 +706,6 @@ function apagarExemplos() {
 }
 
 /* ================= funções usadas no HTML ================= */
-Object.assign(window, { $, entrar, esqueci, trocarSenha, sair, mudaSemana, mudaMes, setFiltro, buscar, abrirPaciente, voltarLista, fechar, abrirSessao, setStatus, setCampo, salvarEvo, marcarRecibo, excluirSessao, formSessao, salvarSessao, formGerar, gerarSessoes, formPaciente, salvarPaciente, excluirPaciente, formDeclaracao, textoDeclaracao, copiarDeclaracao, registrarDeclaracao, registrarDocManual, salvarDocManual, apagarItem, novaSupervisao, novaFormacao, salvarPerfil, salvarValorHora, novaDespesa, removerDespesa, exportarJSON, exportarCSV, importarJSON, carregarExemplos, apagarExemplos });
+Object.assign(window, { $, entrar, criarConta, modoLogin, esqueci, trocarSenha, sair, mudaSemana, mudaMes, setFiltro, buscar, abrirPaciente, voltarLista, fechar, abrirSessao, setStatus, setCampo, salvarEvo, marcarRecibo, excluirSessao, formSessao, salvarSessao, formGerar, gerarSessoes, formPaciente, salvarPaciente, excluirPaciente, formDeclaracao, textoDeclaracao, copiarDeclaracao, registrarDeclaracao, registrarDocManual, salvarDocManual, apagarItem, novaSupervisao, novaFormacao, salvarPerfil, salvarValorHora, novaDespesa, removerDespesa, exportarJSON, exportarCSV, importarJSON, carregarExemplos, apagarExemplos });
 if (!navigator.onLine) $("offline").style.display = "block";
 render();
