@@ -137,7 +137,7 @@ V.painel = () => {
       ${rp.slice(0, 3).map(s => `<div class="item" onclick="abrirSessao('${s.id}')"><div><div class="t">Emitir recibo</div><div class="s">${esc(P(s.pid).nome)}, ${fmt(s.data)}, ${brl(s.valor)}</div></div><span class="pill warn">Receita Saúde</span></div>`).join("")}
       ${pp.slice(0, 3).map(s => `<div class="item" onclick="abrirSessao('${s.id}')"><div><div class="t">Pagamento em aberto</div><div class="s">${esc(P(s.pid).nome)}, ${fmt(s.data)}, ${brl(s.valor)}</div></div><span class="pill bad">a receber</span></div>`).join("")}
       ${proxSup ? `<div class="item" onclick="location.hash='carreira'"><div><div class="t">Supervisão</div><div class="s">${DIAS[parse(proxSup.data).getDay()]}, ${fmtLong(proxSup.data)}</div></div><span class="pill">carreira</span></div>` : ""}
-      ${!ss.length && !ep.length && !rp.length && !pp.length ? '<p class="muted">Nenhuma pendência. Tudo em dia.</p>' : ""}
+      ${!ss.length && !ep.length && !rp.length && !pp.length && !proxSup ? '<p class="muted">Nenhuma pendência. Tudo em dia.</p>' : ""}
     </div></div>
   </div>`;
 };
